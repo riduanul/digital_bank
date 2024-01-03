@@ -12,9 +12,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import environ
+import dj_database_url
+import os
 env = environ.Env()
 environ.Env.read_env()
-import dj_database_url
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +31,7 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -92,10 +94,11 @@ WSGI_APPLICATION = 'digital_bank.wsgi.application'
 #         'PORT': env("DB_PORT"),
 #     }
 # }
-DATABASE = {
+DATABASES = {
     'default': dj_database_url.config(
-        default = 'postgres://digital_bank_1_user:poGiFHHcKo39pE5QpBlGssrboqdWqJAT@dpg-cmac2fv109ks73fcq3p0-a.oregon-postgres.render.com/digital_bank_1',
-       
+        default=os.environ.get('DATABASE_URL', 'postgres://digital_bank_1_user:poGiFHHcKo39pE5QpBlGssrboqdWqJAT@dpg-cmac2fv109ks73fcq3p0-a.oregon-postgres.render.com/digital_bank_1'),
+        conn_max_age=600,
+        ssl_require=True  # Use this line if your database requires SSL
     )
 }
 
