@@ -8,5 +8,7 @@ urlpatterns = [
     path('loan_request', views.LoanRequestView.as_view(), name='loan_request'),
     path('loan_list', views.LoanListView.as_view(), name='loan_list'),
     path('loan/<int:id>', views.PayLoanView.as_view(), name='pay_loan'),
+    path('transfer', views.transfer_money_view, name='transfer'),
     
 ]
+

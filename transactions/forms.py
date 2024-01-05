@@ -56,6 +56,37 @@ class LoanRequestForm(TransactionForm):
         amount = self.cleaned_data.get('amount')
         
         return amount
+
+class TransferMoneyForm(TransactionForm):
+    transfer_to_account_number = forms.CharField(max_length=20, label="Account Number")
+    
+    def __init__(self, *args, **kwargs):
+        self.account = kwargs.get('account')
+        if 'account' in kwargs:
+            del kwargs['account']  # Remove 'account' key to avoid interfering with parent initialization
+            super().__init__(*args, **kwargs)
+        if self.account:
+            self.fields['transaction_type'].disabled = True
+            self.fields['transaction_type'].widget = forms.HiddenInput
+    
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        return amount
+    
+    def clean(self):
+        clean_data = super().clean()
+        amount = clean_data.get('amount')
+        transfer_to_account_number = clean_data.get('transfer_to_account_number')
+        balance = self.account.balance
+        
+        if not transfer_to_account_number:
+            raise forms.ValidationError("Please Provide Account Number")
+        if amount > balance:
+            raise forms.ValidationError(
+                f'Insufficient Amount, You have ${balance} in your account'
+            )
+        
+        return clean_data
     
 
 # class TransferMoneyForm(TransactionForm):

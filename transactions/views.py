@@ -4,13 +4,14 @@ from django.http import HttpResponse
 from django.views.generic import CreateView, ListView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from transactions.models import Transaction
-from transactions.forms import DepositForm, WithdrawForm, LoanRequestForm
-from .constants import DEPOSIT, WITHDRAWAL, LOAN, LOAN_PAID
+from transactions.forms import DepositForm, WithdrawForm, LoanRequestForm, TransferMoneyForm
+from .constants import DEPOSIT, WITHDRAWAL, LOAN, LOAN_PAID, TRANSFER
 from django.contrib import messages
 from django.db.models import Sum
 from django.urls import reverse_lazy
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.template.loader import render_to_string 
+from accounts.models import UserAccount
 # Create your views here.
 
 def send_transaction_email(user, subject, amount, template ):
@@ -80,7 +81,7 @@ class WithdrawMoneyView(TransactionCreateMixin):
             update_fields = ['balance']
         )
         messages.success(self.request, f'Successfully withdrawn {amount}$ from your account ')
-        send_transaction_email(self.request.user,"Withdrawl Message",amount, 'withdraw_email.html' )
+        send_transaction_email(self.request.user,"Withdraw Message",amount, 'withdraw_email.html' )
         return super().form_valid(form)
 
 class LoanRequestView(TransactionCreateMixin):
@@ -161,4 +162,38 @@ class LoanListView(LoginRequiredMixin, ListView):
         
         queryset = Transaction.objects.filter(account = user_account, transaction_type = LOAN)
         return queryset
+
+
+
+def transfer_money_view(request):
+    if request.method == 'POST':
+        form = TransferMoneyForm(request.POST)
+        if form.is_valid():
+            amount = form.cleaned_data.get('amount')
+            transfer_to_account_number = form.cleaned_data.get('transfer_to_account_number')
+            
+            receiver_account = UserAccount.objects.get(account_no = transfer_to_account_number)
+            if receiver_account:
+                sender_account = request.user.account
+                balance = sender_account.balance
+                if amount > balance:
+                   messages.error(request, "Insufficient Amount  ")
+                else:
+                    sender_account.balance -= amount
+                    sender_account.save()
+                    
+                    receiver_account.balance += amount
+                    receiver_account.save() 
+                    
+                    messages.error(request, "Transfer amount successful")
+                    send_transaction_email(request.user,"Transfer Money Message", amount, 'transfer_email.html' )
+                    send_transaction_email(receiver_account.user.email,"Transfer Money Message", amount, 'transfer_email.html' )
+            else:
+                messages.error(request, "Invalid Account")
+                
+        
+    else: 
+        form = TransferMoneyForm()
     
+    return render(request, 'transfer_money.html', {'form': form})
+            

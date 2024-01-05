@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from .constant import ACCOUNT_TYPE, GENDER_TYPE
 # Create your models here.
-# django amaderk built in user make korar facility day.
 
 class UserAccount(models.Model):
     user = models.OneToOneField(User, related_name='account', on_delete = models.CASCADE )
